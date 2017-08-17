@@ -3,27 +3,19 @@
 int main(void) {
   uint8_t is_btn_pushed = 0, is_overload = 0;
   
-  _delay_ms(1000);
-  
-  asm("WDR\n");
-  
-  // Config motor pins as output
-  MOTOR_FWD_DDR |= 1 << MOTOR_FWD_PIN_NO;
-  MOTOR_BWD_DDR |= 1 << MOTOR_BWD_PIN_NO;
-  
-  MOTOR_FWD_PORT |= 1 << MOTOR_FWD_PIN_NO; // Start motor
+  motor_init();
   
   while (1) {
-    // Detect button trailing edge
+    // Detecting button trailing edge
     if (debounced_poll(&BTN_PIN, 1 << BTN_PIN_NO, NOT_INV)) {
       is_btn_pushed = 1;
     }
     if (is_btn_pushed && debounced_poll(&BTN_PIN, 1 << BTN_PIN_NO, INV)) {
-      motor_reverse();
       is_btn_pushed = 0;
+      motor_togle();
     }
     
-    // Detect overload leading edge
+    // Detecting overload leading edge
     if (!is_overload && debounced_poll(&OVLD_PIN, 1 << OVLD_PIN_NO, NOT_INV)) {
       motor_reverse();
       is_overload = 1;
@@ -47,16 +39,4 @@ uint8_t debounced_poll(volatile uint8_t *p, uint8_t m, uint8_t inv) {
     }
   }
   return 0;
-}
-
-void motor_reverse(void) {
-  if (MOTOR_FWD_PORT & 1 << MOTOR_FWD_PIN_NO) {
-    MOTOR_FWD_PORT ^= 1 << MOTOR_FWD_PIN_NO;
-    _delay_ms(5);
-    MOTOR_BWD_PORT |= 1 << MOTOR_BWD_PIN_NO;
-  } else if (MOTOR_BWD_PORT & 1 << MOTOR_BWD_PIN_NO) {
-    MOTOR_BWD_PORT ^= 1 << MOTOR_BWD_PIN_NO;
-    _delay_ms(5);
-    MOTOR_FWD_PORT |= 1 << MOTOR_FWD_PIN_NO;
-  }
 }
